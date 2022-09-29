@@ -77,13 +77,14 @@ return the removed element.
 (Nothing,[1,2,3,4,5])
 -}
 removeAt :: Int -> [a] -> (Maybe a, [a])
-removeAt idx lst
-  | idx < 0          = (Nothing, lst)
-  | idx < length lst = (return val, lst_)
-  | otherwise        = (Nothing, lst)
-  where
-    val = lst !! idx
-    lst_ = take idx lst ++ drop (idx+1) lst
+removeAt _ [] = (Nothing, [])
+removeAt 0 (x:xs) = (Just x, xs)
+removeAt n (x:xs)
+  | n < 0 = (Nothing, x:xs)
+  | otherwise = case removeAt (n - 1) xs of
+      (Nothing, _) -> (Nothing, x:xs)
+      (Just xx, xss) -> (Just xx, x:xss)
+
 
 
 {- | Write a function that takes a list of lists and returns only
@@ -363,4 +364,23 @@ Write a function that takes and expression and performs "Constant
 Folding" optimization on the given expression.
 -}
 constantFolding :: Expr -> Expr
-constantFolding = error "TODO"
+constantFolding e
+  | n == 0    = foo s
+  | null s    = Lit n
+  | otherwise = Add (Lit n) (foo s)
+  where
+    (s, n) = splitExpr e
+
+foo :: [String] -> Expr
+foo [] = Lit 0
+foo [s] = Var s
+foo (s:xs) = Add (Var s) (foo xs)
+
+splitExpr :: Expr -> ([String], Int)
+splitExpr e = case e of
+  Lit n -> ([], n)
+  Var s -> ([s], 0)
+  Add ex ex' -> combine (splitExpr ex) (splitExpr ex')
+
+combine :: Num b => ([a], b) -> ([a], b) -> ([a], b)
+combine (as, bs) (cs, ds) = (as ++ cs, bs + ds)
